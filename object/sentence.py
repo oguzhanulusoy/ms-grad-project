@@ -4,7 +4,7 @@ class sentence:
 
     def __init__(self, subject, verb, object, multiplicities, primaryKeys):
         self.id = str(datetime.datetime.now())
-        self.subject = subject
+        self.subject = subject[0]
         self.verb = verb
         self.object = object
         self.multiplicities = multiplicities
@@ -42,7 +42,7 @@ class sentence:
             print()
 
     def getObject(self):
-        return str(self.object)
+        return self.object
 
     def setObject(self, object):
         try:

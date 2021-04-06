@@ -1,10 +1,17 @@
+import nltk as nltk
 import spacy
 from object import sentence as s
+from object import attribute as a
+from object import entity as e
 #python -m spacy download en_core_web_sm
 
 nlp = spacy.load("en_core_web_sm")
-doc = nlp("Each red musician takes a database management systems unique SSN, many name, an address, and a department head. Each song recorded at Music Company has a title and an author.")
+doc = nlp("Each red musician has a database management systems unique SSN, many names, an addresses, and a department head. Each song recorded at Music Company has a title and an author.")
 sentences = list(doc.sents)
+
+ATTRIBUTE_LIST = []
+ENTITY_LIST = []
+RELATION_LIST = []
 
 def createSentence(sentence):
 
@@ -49,11 +56,10 @@ def createSentence(sentence):
             nouns.append(previousWord)
 
         if str(sentence.__getitem__(i).dep_) == "compound" and str(sentence.__getitem__(i+1).dep_) == "compound":
-            previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text + " " + sentence.__getitem__(i+1).head.text
+            previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text
             nouns.append(previousWord)
 
     object = nouns
-
     instance = s.sentence(subject=subject, verb=verb, object=object, primaryKeys=primaryKeys, multiplicities=multiplicities)
 
     return instance
@@ -61,36 +67,75 @@ def createSentence(sentence):
 
 
 specialVerbs = ["has"]
-entity_list = ["musician"]
+entity_list = [""]
 def heuristicMachine(sentence):
     subject = sentence.getSubject()
     verb = sentence.getVerb()
     object = sentence.getObject()
 
 
+
     # attribute iliskisi gelecek
     if verb in specialVerbs:
-        print("oguzhan")
-
         # subject varsa attribute ları ekle
         if subject[0] in entity_list:
-            print("ulusoy")
+            print()
 
         # yeni yarat
         else:
-            print()
+            print( "geldim")
+            makeEntity(sentence=sentence)
 
     # normal relation gelecek
     else:
         print()
 
 
+def getSingularNoun(noun):
+    lemma = nltk.wordnet.WordNetLemmatizer()
+    return lemma.lemmatize(noun)
+
+def makeEntity(sentence):
+
+    primaryKeys = sentence.getPk()
+    subject = sentence.getSubject()
+    object = sentence.getObject()
+
+    print(object)
+    attributes = []
+    # Create attribute, then convert the result into a list
+    for item in object:
+        isPrimaryKey = False
+        if item in primaryKeys:
+            isPrimaryKey = True
+
+        # karsilastir, cogul mu diye bakıver.
+        # get singular form
+
+        newAttribute = a.attribute(getSingularNoun(item), isPrimaryKey, False)
+        attributes.append(newAttribute)
+        ATTRIBUTE_LIST.append(newAttribute)
+
+    #singular form
+    newEntity = e.entity(name=getSingularNoun(subject), attributes=attributes)
+    ENTITY_LIST.append(newEntity)
+
+    for i in attributes:
+        print(i.getName())
+    return None
 
 
+''' TEST '''
+test_sentence = sentences[0]
+test_instance = createSentence(test_sentence)
+heuristicMachine(test_instance)
+
+'''RUN
 sentenceList = []
 #createSentence(sentences[0])
 for sentence in sentences:
     instance = createSentence(sentence)
     heuristicMachine(instance)
     sentenceList.append(instance)
+'''
 
