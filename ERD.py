@@ -11,6 +11,7 @@ import nltk as nltk
 import spacy
 import logging
 #python -m spacy download en_core_web_sm
+#pip freeze > requirements.txt
 
 ###################################
 ###################################
@@ -458,6 +459,14 @@ def modifyEntity(sentence, isSinglePerson):
     e.entity.setAttributes(entity, attributes)
     if isDebug:
         logging.debug("\t\t\t\t Entity is found => " + str(entity.getName()))
+
+def modifyAttribute(entityName, attributeName):
+    entity = getEntity(subject=entityName)
+    for attribute in entity.getAttributes():
+        if str(attribute.getName).lower().__eq__(str(attributeName).lower()):
+            attribute.setPrimaryKey(True)
+            if isDebug:
+                logging.debug("Modified attribute => " + str(attribute.getName()))
 
 ###################################
 ###################################
