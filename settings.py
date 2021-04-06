@@ -1,9 +1,42 @@
+###################################
+###################################
+###                             ###
+###       CONFIGURATIONS        ###
+###                             ###
+###################################
+###################################
 SPECIAL_VERB_LIST = ["has"]
+SUBJECT_DEPS_LIST = ["nsubj", "nsubjpass"]
 TABLE_SIZE = 60
-IS_DEBUG = True
+IS_DEBUG = False
+IS_TRACE = True
 
-# Draw line border
-# Sample: +----------------------+
+###################################
+###################################
+###                             ###
+###         PROPERTIES          ###
+###                             ###
+###################################
+###################################
+COMPOUND = "compound"
+NOUN = "NOUN"
+VERB = 'VERB'
+ROOT = 'ROOT'
+ADJECTIVE = "ADJ"
+UNIQUE_KEY = "unique"
+MANY_KEY = "many"
+PRIMARY_KEY = " PK"
+MULTIVALUE_KEY = " *"
+RELATION = "RELATIONS"
+
+###################################
+###################################
+###                             ###
+###         TABLE FUNC          ###
+###                             ###
+###################################
+###################################
+# i.e. +----------------------+
 def line_border():
     line_border = "+"
 
@@ -13,8 +46,7 @@ def line_border():
 
     return str(line_border)
 
-# Draw and place table line
-# Sample: | student              |
+# i.e. | student              |
 def table_line(entity):
     item_line = "| "
     item_line += str(entity).upper()
@@ -25,8 +57,7 @@ def table_line(entity):
 
     return item_line
 
-# Draw and place item line
-# Sample: | + name               |
+# i.e. | + name               |
 def item_line(attribute):
     item_line = "| + "
     item_line += str(attribute).capitalize()
@@ -37,8 +68,7 @@ def item_line(attribute):
 
     return item_line
 
-# Draw and place item line
-# Sample: | + name               |
+# i.e. | + name               |
 def relation_line(relation):
     item_line = "| "
     item_line += str(relation).capitalize()

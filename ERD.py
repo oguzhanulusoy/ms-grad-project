@@ -1,15 +1,28 @@
+###################################
+###################################
+###                             ###
+###            LIBS             ###
+###                             ###
+###################################
+###################################
+from datetime import datetime
+from settings import *
 import nltk as nltk
 import spacy
 import logging
+#python -m spacy download en_core_web_sm
 
+###################################
+###################################
+###                             ###
+###           OBJECT            ###
+###                             ###
+###################################
+###################################
 from object import sentence as s
 from object import attribute as a
 from object import entity as e
 from object import relation as r
-#python -m spacy download en_core_web_sm
-
-#setup
-from settings import *
 
 ###################################
 ###################################
@@ -19,6 +32,7 @@ from settings import *
 ###################################
 ###################################
 isDebug = IS_DEBUG
+isTrace = IS_TRACE
 
 ###################################
 ###################################
@@ -28,7 +42,9 @@ isDebug = IS_DEBUG
 ###################################
 ###################################
 def setup():
-    logging.basicConfig(filename='app.log', format='%(levelname)s:%(message)s', level=logging.DEBUG)
+    logging.basicConfig(filename='app.log', format='%(message)s', level=logging.DEBUG)
+    if isDebug:
+        logging.debug("Running right now => " + str(datetime.now()))
 
 ###################################
 ###################################
@@ -40,7 +56,7 @@ def setup():
 def run():
     setup()
     nlp = spacy.load("en_core_web_sm")
-    doc = nlp("musician takes a many course. Each red musician has a database management systems unique names, an addresses, and a department head. Musician has phone numbers. Each song recorded at Music Company has a title and an author.")
+    doc = nlp("musician takes a many course. Each red musician has a database management systems unique names, an addresses, and a department heads. Musician has phone numbers. Each song recorded at Music Company has a title and an author.")
     sentences = list(doc.sents)
 
     sentenceList = []
@@ -50,7 +66,10 @@ def run():
         fsm(instance)
         sentenceList.append(instance)
 
-    maker()
+    if isTrace:
+        if isDebug:
+            logging.debug("Drawing right now => " + str(datetime.now()))
+        maker()
 
 ###################################
 ###################################
@@ -72,10 +91,8 @@ RELATION_LIST = []
 ###################################
 def getEntity(subject):
     for item in ENTITY_LIST:
-
         if str(item.getName()).lower() == str(subject).lower():
             entity = item
-
     return entity
 
 def hasEntity(subject):
@@ -91,13 +108,22 @@ def isAttribute(verb):
 
 def getSingularNoun(noun):
     lemma = nltk.wordnet.WordNetLemmatizer()
-    return lemma.lemmatize(noun)
+    nouns = noun.split(" ")
+    singleForm = ''
+    size = len(nouns)
+
+    if size.__eq__(1):
+        singleForm = lemma.lemmatize(noun)
+        return singleForm
+
+    for item in range (0, size-1):
+        singleForm += str(nouns[item] + " ")
+    singleForm += str(lemma.lemmatize(nouns[size-1]))
+    return singleForm
 
 def getSingularVerb(word):
     stemmer = nltk.SnowballStemmer("english")
     return stemmer.stem(word)
-
-
 
 ###################################
 ###################################
@@ -118,14 +144,13 @@ def analyzer(sentence):
     object = None
 
     # retrieve subject part from the sentence
-    SUBJECTS = ["nsubj", "nsubjpass"]
-    subject = [tok.text for tok in sentence if (tok.dep_ in SUBJECTS)]
+    subject = [tok.text for tok in sentence if (tok.dep_ in SUBJECT_DEPS_LIST)]
     if isDebug:
         logging.debug("\t Subject => " + subject[0])
 
     # retrieve verb part from the sentence
     for token in sentence:
-        if token.pos_ == 'VERB' and token.dep_ == 'ROOT':
+        if token.pos_ == VERB and token.dep_ == ROOT:
             verb = token.text
     if isDebug:
         logging.debug("\t Verb => " + verb)
@@ -137,32 +162,42 @@ def analyzer(sentence):
     primaryKeys = []
 
     for i in range (0, len(sentence)-1):
-
-        if str(sentence.__getitem__(i).text) not in previousWord and str(sentence.__getitem__(i).dep_) != "compound":
-
+        try:
             # add one word noun
-            if sentence.__getitem__(i).pos_ == "NOUN":
-                if sentence.__getitem__(i).text not in subject:
-                    nouns.append(sentence.__getitem__(i).text) #doc
+            if str(sentence.__getitem__(i).text) not in previousWord and str(sentence.__getitem__(i).dep_) != COMPOUND:
+                if sentence.__getitem__(i).pos_ == NOUN:
+                    if sentence.__getitem__(i).text not in subject:
+                        nouns.append(sentence.__getitem__(i).text)
 
-            if sentence.__getitem__(i).pos_ == "ADJ":
-                # to find primary key through unique adjective
-                if sentence.__getitem__(i).text == "unique":
-                    primaryKeys.append(sentence.__getitem__(i+1).text)
+                if sentence.__getitem__(i).pos_ == ADJECTIVE:
+                    # to find primary key through unique adjective
+                    if sentence.__getitem__(i).text == UNIQUE_KEY:
+                        primaryKeys.append(sentence.__getitem__(i+1).text)
 
-                # to find multiplicity through many adjective
-                if str(sentence.__getitem__(i).text).lower() == "many":
-                    multiplicities.append(sentence.__getitem__(i+1).text) #doc
+                    # to find multiplicity through many adjective
+                    if str(sentence.__getitem__(i).text).lower() == MANY_KEY:
+                        multiplicities.append(sentence.__getitem__(i+1).text)
+        except:
+            if isDebug:
+                logging.error("Analyzer has got an error while parsing the one word noun => " + str(sentence.__getitem__(i).text))
 
-        # add two words noun
-        if str(sentence.__getitem__(i).text) not in previousWord and str(sentence.__getitem__(i).dep_) == "compound" and str(sentence.__getitem__(i+1).dep_) != "compound":
-            previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text
-            nouns.append(previousWord)
+        try:
+            # add two words noun
+            if str(sentence.__getitem__(i).text) not in previousWord and str(sentence.__getitem__(i).dep_) == COMPOUND and str(sentence.__getitem__(i+1).dep_) != COMPOUND:
+                previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text
+                nouns.append(previousWord)
+        except:
+            if isDebug:
+                logging.error("Analyzer has got an error while parsing the two words noun => " + str(sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text))
 
-        # add three words noun
-        if str(sentence.__getitem__(i).dep_) == "compound" and str(sentence.__getitem__(i+1).dep_) == "compound":
-            previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text
-            nouns.append(previousWord)
+        try:
+            # add three words noun
+            if str(sentence.__getitem__(i).dep_) == COMPOUND and str(sentence.__getitem__(i+1).dep_) == COMPOUND:
+                previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text
+                nouns.append(previousWord)
+        except:
+            if isDebug:
+                logging.error("Analyzer has got an error while parsing the three words noun => " + str(sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text))
 
     object = nouns
     if isDebug:
@@ -204,7 +239,11 @@ def fsm(sentence):
         if hasEntity(subject=subject):
             if isDebug:
                 logging.debug("\t\t The entity already exists => " + str(subject))
-            modifyEntity(sentence=sentence, isSinglePerson=True)
+            try:
+                modifyEntity(sentence=sentence, isSinglePerson=True)
+            except:
+                if isDebug:
+                    logging.error("\t\t An error for modifyEntity => " + str(subject))
             if isDebug:
                 logging.debug("\t\t Finally modified entity => " + str(subject))
 
@@ -212,7 +251,11 @@ def fsm(sentence):
         else:
             if isDebug:
                 logging.debug("\t\t The entity is not found => " + str(subject))
-            createEntity(sentence=sentence, isSinglePerson=True)
+            try:
+                createEntity(sentence=sentence, isSinglePerson=True)
+            except:
+                if isDebug:
+                    logging.error("\t\t An error for createEntity => " + str(subject))
             if isDebug:
                 logging.debug("\t\t Finally created entity => " + str(subject))
 
@@ -220,7 +263,11 @@ def fsm(sentence):
     else:
         if isDebug:
             logging.debug("\t\t A special verb is NOT found => " + str(verb))
-        createRelation(sentence=sentence)
+        try:
+            createRelation(sentence=sentence)
+        except:
+            if isDebug:
+                logging.error("\t\t An error for createRelation => " + str(verb))
         if isDebug:
             logging.debug("\t\t Finally created relation => " + str(verb))
 
@@ -270,11 +317,12 @@ def createRelation(sentence):
         m1 = '1'
         m2 = '1'
 
-    # i.e. Students take course
+    # i.e. Students take courseS
     if not processedSubject.__eq__(subject) and not processedObject.__eq__(object):
         m1 = 'N'
         m2 = 'N'
 
+    # i.e. Students take course
     if not processedSubject.__eq__(subject) and processedObject.__eq__(object):
         m1 = 'N'
         m2 = '1'
@@ -383,16 +431,16 @@ def maker():
         for attribute in entity.getAttributes():
             attribute_line = attribute.getName()
             if eval(attribute.isMultiValued()):
-                attribute_line = str(attribute_line).__add__(" *")
+                attribute_line = str(attribute_line).__add__(MULTIVALUE_KEY)
             if eval(attribute.isPrimaryKey()):
-                attribute_line = str(attribute_line).__add__(" PK")
+                attribute_line = str(attribute_line).__add__(PRIMARY_KEY)
             print(item_line(attribute_line))
         print(line_border())
         print()
 
     if len(RELATION_LIST) > 0:
         print(line_border())
-        print(table_line("RELATIONS"))
+        print(table_line(RELATION))
         print(line_border())
         for relation in RELATION_LIST:
             print(relation_line(" (" + relation.getMultiplictyOne() + ") " + relation.who + " -> " + relation.action + " -> (" + relation.getMultiplictyTwo() + ") " + relation.whom))
