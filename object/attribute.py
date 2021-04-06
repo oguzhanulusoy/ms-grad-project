@@ -2,7 +2,7 @@ class attribute:
 
     def __init__(self, name, primaryKey, multiValued):
         self.name = name
-        self.primaryKey = primaryKey
+        self.primaryKey = str(primaryKey)
         self.multiValued = str(multiValued)
 
     def getName(self):
@@ -12,7 +12,7 @@ class attribute:
         self.name = name
 
     def isPrimaryKey(self):
-        return bool(self.primaryKey)
+        return str(self.primaryKey)
 
     def setPrimaryKey(self, primaryKey):
         self.primaryKey = primaryKey

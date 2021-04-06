@@ -61,3 +61,5 @@ class sentence:
     def getPk(self):
         return self.primaryKeys
 
+    def getMultiplicities(self):
+        return self.multiplicities
