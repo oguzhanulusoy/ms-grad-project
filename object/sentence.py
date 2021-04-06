@@ -58,7 +58,7 @@ class sentence:
     def getSentence(self):
         return "{} {} {}".format(self.getSubject(), self.getVerb(), self.getObject())
 
-    def getPk(self):
+    def getPrimaryKeys(self):
         return self.primaryKeys
 
     def getMultiplicities(self):

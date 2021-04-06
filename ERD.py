@@ -53,10 +53,10 @@ def setup():
 ###                             ###
 ###################################
 ###################################
-def run():
+def run(document):
     setup()
     nlp = spacy.load("en_core_web_sm")
-    doc = nlp("musician takes a many course. Each red musician has a database management systems unique names, an addresses, and a department heads. Musician has phone numbers. Each song recorded at Music Company has a title and an author.")
+    doc = nlp(str(document))
     sentences = list(doc.sents)
 
     sentenceList = []
@@ -106,6 +106,11 @@ def isAttribute(verb):
         return True
     return False
 
+def isSingle(subject):
+    if str(subject).lower().__eq__(getSingularNoun(str(subject).lower())):
+        return True
+    return False
+
 def getSingularNoun(noun):
     lemma = nltk.wordnet.WordNetLemmatizer()
     nouns = noun.split(" ")
@@ -139,44 +144,54 @@ def analyzer(sentence):
         logging.debug("createSentence method is starting for given sentence:")
         logging.debug(sentence)
 
-    subject = None
+    subject = []
     verb = None
     object = None
 
     # retrieve subject part from the sentence
-    subject = [tok.text for tok in sentence if (tok.dep_ in SUBJECT_DEPS_LIST)]
+    for token in sentence:
+        if token.dep_ in SUBJECT_DEPS_LIST:
+            subject.append(token.text)
     if isDebug:
-        logging.debug("\t Subject => " + subject[0])
+        logging.debug("\t Subject => " + str(subject[0]))
 
     # retrieve verb part from the sentence
     for token in sentence:
         if token.pos_ == VERB and token.dep_ == ROOT:
             verb = token.text
     if isDebug:
-        logging.debug("\t Verb => " + verb)
+        logging.debug("\t Verb => " + str(verb))
 
     # retrieve object part from the sentence
     previousWord = ""
+    noun = ""
     nouns = []
+    isMultiplicity = False
     multiplicities = []
+    isPrimaryKey = False
     primaryKeys = []
 
     for i in range (0, len(sentence)-1):
+
+        try:
+            # to find primary key
+            if sentence.__getitem__(i).pos_ == ADJECTIVE:
+                # to find primary key through many adjective
+                if sentence.__getitem__(i).text == UNIQUE_KEY:
+                    isPrimaryKey = True
+                # to find multiplicity through many adjective
+                if str(sentence.__getitem__(i).text).lower() == MANY_KEY:
+                    isMultiplicity = True
+        except:
+            if isDebug:
+                logging.error("Analyzer has got and error while parsing multiplicity or primary key")
+
         try:
             # add one word noun
             if str(sentence.__getitem__(i).text) not in previousWord and str(sentence.__getitem__(i).dep_) != COMPOUND:
                 if sentence.__getitem__(i).pos_ == NOUN:
                     if sentence.__getitem__(i).text not in subject:
-                        nouns.append(sentence.__getitem__(i).text)
-
-                if sentence.__getitem__(i).pos_ == ADJECTIVE:
-                    # to find primary key through unique adjective
-                    if sentence.__getitem__(i).text == UNIQUE_KEY:
-                        primaryKeys.append(sentence.__getitem__(i+1).text)
-
-                    # to find multiplicity through many adjective
-                    if str(sentence.__getitem__(i).text).lower() == MANY_KEY:
-                        multiplicities.append(sentence.__getitem__(i+1).text)
+                        noun = str(sentence.__getitem__(i).text)
         except:
             if isDebug:
                 logging.error("Analyzer has got an error while parsing the one word noun => " + str(sentence.__getitem__(i).text))
@@ -185,7 +200,7 @@ def analyzer(sentence):
             # add two words noun
             if str(sentence.__getitem__(i).text) not in previousWord and str(sentence.__getitem__(i).dep_) == COMPOUND and str(sentence.__getitem__(i+1).dep_) != COMPOUND:
                 previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text
-                nouns.append(previousWord)
+                noun = previousWord
         except:
             if isDebug:
                 logging.error("Analyzer has got an error while parsing the two words noun => " + str(sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text))
@@ -194,10 +209,23 @@ def analyzer(sentence):
             # add three words noun
             if str(sentence.__getitem__(i).dep_) == COMPOUND and str(sentence.__getitem__(i+1).dep_) == COMPOUND:
                 previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text
-                nouns.append(previousWord)
+                noun = previousWord
         except:
             if isDebug:
                 logging.error("Analyzer has got an error while parsing the three words noun => " + str(sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text))
+
+        if not noun.__eq__(''):
+            nouns.append(noun)
+
+            if isPrimaryKey:
+                primaryKeys.append(noun)
+                isPrimaryKey = False
+
+            if isMultiplicity:
+                multiplicities.append(noun)
+                isMultiplicity = False
+
+            noun = ''
 
     object = nouns
     if isDebug:
@@ -205,7 +233,7 @@ def analyzer(sentence):
 
     instance = s.sentence(subject=subject, verb=verb, object=object, primaryKeys=primaryKeys, multiplicities=multiplicities)
     if isDebug:
-        logging.debug("\t Primary keys (if exists) => " + str(instance.getPk()))
+        logging.debug("\t Primary keys (if exists) => " + str(instance.getPrimaryKeys()))
         logging.debug("\t Multiplicities (if exists) => " + str(instance.getMultiplicities()))
     return instance
 
@@ -224,11 +252,14 @@ def fsm(sentence):
     subject = sentence.getSubject()
     verb = sentence.getVerb()
     object = sentence.getObject()
-
     if isDebug:
         logging.debug("\t Subject => " + str(subject))
         logging.debug("\t Verb => " + str(verb))
         logging.debug("\t Object => " + str(object))
+
+    isSinglePerson = isSingle(subject)
+    if isDebug:
+        logging.debug("\t isSinglePerson => " + str(isSinglePerson))
 
     # attribute-based relation
     if isAttribute(verb=verb):
@@ -240,7 +271,7 @@ def fsm(sentence):
             if isDebug:
                 logging.debug("\t\t The entity already exists => " + str(subject))
             try:
-                modifyEntity(sentence=sentence, isSinglePerson=True)
+                modifyEntity(sentence=sentence, isSinglePerson=isSinglePerson)
             except:
                 if isDebug:
                     logging.error("\t\t An error for modifyEntity => " + str(subject))
@@ -252,7 +283,7 @@ def fsm(sentence):
             if isDebug:
                 logging.debug("\t\t The entity is not found => " + str(subject))
             try:
-                createEntity(sentence=sentence, isSinglePerson=True)
+                createEntity(sentence=sentence, isSinglePerson=isSinglePerson)
             except:
                 if isDebug:
                     logging.error("\t\t An error for createEntity => " + str(subject))
@@ -283,10 +314,10 @@ def createRelation(sentence):
     if isDebug:
         logging.debug("\t\t\tcreateRelation method is starting...")
 
-    subject = sentence.getSubject()
-    verb = sentence.getVerb()
+    subject = sentence.getSubject().lower()
+    verb = sentence.getVerb().lower()
     object = sentence.getObject()
-    object = object[0]
+    object = str(object[0]).lower()
     multiplicities = sentence.getMultiplicities()
 
     if isDebug:
@@ -343,13 +374,20 @@ def createRelation(sentence):
     new_relation.setMultiplictyTwo(m2)
     RELATION_LIST.append(new_relation)
 
-def createAttribute(primaryKeys, isSinglePerson, object):
+def createAttribute(sentence, isSinglePerson):
+
+    primaryKeys = sentence.getPrimaryKeys()
+    object = sentence.getObject()
+    subject = sentence.getSubject()
+    multiplicities = sentence.getMultiplicities()
 
     if isDebug:
         logging.debug("\t\t\tcreateAttribute method is starting...")
         logging.debug("\t\t\t\t isSinglePerson => " + str(isSinglePerson))
         logging.debug("\t\t\t\t Object => " + str(object))
+        logging.debug("\t\t\t\t Subject => " + str(subject))
         logging.debug("\t\t\t\t Primary Keys => " + str(primaryKeys))
+        logging.debug("\t\t\t\t Multiplicities => " + str(multiplicities))
 
     attributes = []
     counter = 1
@@ -363,6 +401,9 @@ def createAttribute(primaryKeys, isSinglePerson, object):
         if isSinglePerson:
             if not processedItem.__eq__(item):
                 isMultiValued = True
+
+        if item in multiplicities:
+            isMultiValued = True
 
         if isDebug:
             logging.debug("\t\t\t\t\t" + str(counter) + ". attribute => " + str(processedItem) + " {PK: " + str(isPrimaryKey) + "; Multi-valued: " + str(isMultiValued) + "}")
@@ -379,7 +420,7 @@ def createEntity(sentence, isSinglePerson):
     if isDebug:
         logging.debug("\t\t\tcreateEntity method is starting...")
 
-    primaryKeys = sentence.getPk()
+    primaryKeys = sentence.getPrimaryKeys()
     subject = sentence.getSubject()
     object = sentence.getObject()
 
@@ -389,7 +430,7 @@ def createEntity(sentence, isSinglePerson):
         logging.debug("\t\t\t\t Object => " + str(object))
         logging.debug("\t\t\t\t isSinglePerson => " + str(isSinglePerson))
 
-    attributes = createAttribute(primaryKeys, isSinglePerson, object)
+    attributes = createAttribute(sentence=sentence, isSinglePerson=isSinglePerson)
     newEntity = e.entity(name=getSingularNoun(subject), attributes=attributes)
     ENTITY_LIST.append(newEntity)
     if isDebug:
@@ -400,7 +441,7 @@ def modifyEntity(sentence, isSinglePerson):
     if isDebug:
         logging.debug("\t\t\tmodifyEntity method is starting...")
 
-    primaryKeys = sentence.getPk()
+    primaryKeys = sentence.getPrimaryKeys()
     subject = sentence.getSubject()
     object = sentence.getObject()
 
@@ -410,7 +451,7 @@ def modifyEntity(sentence, isSinglePerson):
         logging.debug("\t\t\t\t Object => " + str(object))
         logging.debug("\t\t\t\t isSinglePerson => " + str(isSinglePerson))
 
-    attributes = createAttribute(primaryKeys, isSinglePerson, object)
+    attributes = createAttribute(sentence=sentence, isSinglePerson=isSinglePerson)
     entity = getEntity(subject)
     e.entity.setAttributes(entity, attributes)
     if isDebug:
@@ -445,5 +486,5 @@ def maker():
         for relation in RELATION_LIST:
             print(relation_line(" (" + relation.getMultiplictyOne() + ") " + relation.who + " -> " + relation.action + " -> (" + relation.getMultiplictyTwo() + ") " + relation.whom))
             print(line_border())
-
     print("* means multi-valued and pk is primary key.")
+

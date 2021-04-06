@@ -22,10 +22,3 @@ class attribute:
 
     def setMultiValued(self, multiValued):
         self.multiValued = multiValued
-
-
-# composite attribtue?
-
-# multi_valued attribute?
-# has many locations, has many numbers
-# has locations ozne tekil, nesne cogul.

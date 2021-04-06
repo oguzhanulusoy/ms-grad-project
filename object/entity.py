@@ -17,17 +17,10 @@ class entity:
     def setAttributes(self, attributes):
         if attributes != None:
             temp = []
-
             for item in self.attributes:
                 temp.append(item)
-
             for item in attributes:
                 temp.append(item)
-
             self.attributes = temp
         else:
             self.attributes = attributes
-
-    def find(self, name):
-        if self.name == str(name).lower():
-            return self.attributes

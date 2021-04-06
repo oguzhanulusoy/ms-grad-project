@@ -5,7 +5,7 @@
 ###                             ###
 ###################################
 ###################################
-SPECIAL_VERB_LIST = ["has"]
+SPECIAL_VERB_LIST = ["has", "contains", "includes"]
 SUBJECT_DEPS_LIST = ["nsubj", "nsubjpass"]
 TABLE_SIZE = 60
 IS_DEBUG = False

@@ -21,4 +21,3 @@ class relation:
 
     def setMultiplictyTwo(self, val):
         self.multiplicity_two = val
-
