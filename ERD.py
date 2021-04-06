@@ -59,8 +59,10 @@ def run(document):
     doc = nlp(str(document))
     sentences = list(doc.sents)
 
-    sentenceList = []
+    for sentence in sentences:
+        print(sentence)
 
+    sentenceList = []
     for sentence in sentences:
         instance = analyzer(sentence)
         fsm(instance)
@@ -121,7 +123,7 @@ def getSingularNoun(noun):
         singleForm = lemma.lemmatize(noun)
         return singleForm
 
-    for item in range (0, size-1):
+    for item in range(0, size-1):
         singleForm += str(nouns[item] + " ")
     singleForm += str(lemma.lemmatize(nouns[size-1]))
     return singleForm
@@ -171,7 +173,7 @@ def analyzer(sentence):
     isPrimaryKey = False
     primaryKeys = []
 
-    for i in range (0, len(sentence)-1):
+    for i in range(0, len(sentence)-1):
 
         try:
             # to find primary key
@@ -370,8 +372,8 @@ def createRelation(sentence):
     new_relation = r.relation(who=processedSubject,
                               action=processedVerb,
                               whom=processedObject)
-    new_relation.setMultiplictyOne(m1)
-    new_relation.setMultiplictyTwo(m2)
+    new_relation.setMultiplicityOne(m1)
+    new_relation.setMultiplicityTwo(m2)
     RELATION_LIST.append(new_relation)
 
 def createAttribute(sentence, isSinglePerson):
@@ -484,7 +486,7 @@ def maker():
         print(table_line(RELATION))
         print(line_border())
         for relation in RELATION_LIST:
-            print(relation_line(" (" + relation.getMultiplictyOne() + ") " + relation.who + " -> " + relation.action + " -> (" + relation.getMultiplictyTwo() + ") " + relation.whom))
+            print(relation_line(" (" + relation.getMultiplicityOne() + ") " + relation.who + " -> " + relation.action + " -> (" + relation.getMultiplicityTwo() + ") " + relation.whom))
             print(line_border())
     print("* means multi-valued and pk is primary key.")
 

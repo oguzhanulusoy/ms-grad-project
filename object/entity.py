@@ -4,7 +4,6 @@ class entity:
         self.name = name
         self.attributes = attributes
 
-
     def getName(self):
         return str(self.name)
 
@@ -15,7 +14,7 @@ class entity:
         self.name = str(name).lower()
 
     def setAttributes(self, attributes):
-        if attributes != None:
+        if not attributes:
             temp = []
             for item in self.attributes:
                 temp.append(item)

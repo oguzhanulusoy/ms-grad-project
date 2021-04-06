@@ -10,14 +10,14 @@ class relation:
     def get_action(self):
         return str(self.action)
 
-    def getMultiplictyOne(self):
+    def getMultiplicityOne(self):
         return str(self.multiplicity_one)
 
-    def setMultiplictyOne(self, val):
+    def setMultiplicityOne(self, val):
         self.multiplicity_one = val
 
-    def getMultiplictyTwo(self):
+    def getMultiplicityTwo(self):
         return str(self.multiplicity_two)
 
-    def setMultiplictyTwo(self, val):
+    def setMultiplicityTwo(self, val):
         self.multiplicity_two = val
