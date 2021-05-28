@@ -151,8 +151,28 @@ def analyzer(sentence):
     verb = None
     object = None
 
+    # start : asagisi silinebilir!
+    hasAux = False
+    hasVerb = False
+    isPassive = False
+    for token in sentence:
+        if isDebug:
+            logging.debug("\t Token details => Word: " + token.text + " | Pos: " + token.pos_ + " | Dep: " + token.dep_)
+        if token.pos_ == VERB and token.dep_ == ROOT:
+            hasVerb = True
+        if token.pos_== AUX and token.dep_ == AUXPASS:
+            hasAux = True
+
+    if hasAux and hasVerb:
+        isPassive = True
+        if isDebug:
+            logging.debug("\t This sentence has a passive structure!")
+    # end
+
     # retrieve subject part from the sentence
     for token in sentence:
+        if isDebug:
+            logging.debug("\t Token details => Word: " + token.text + " | Pos: " + token.pos_ + " | Dep: " + token.dep_)
         if token.dep_ in SUBJECT_DEPS_LIST:
             subject.append(token.text)
     if isDebug:

@@ -8,7 +8,7 @@
 SPECIAL_VERB_LIST = ["has", "contains", "includes"]
 SUBJECT_DEPS_LIST = ["nsubj", "nsubjpass"]
 TABLE_SIZE = 60
-IS_DEBUG = False
+IS_DEBUG = True
 IS_TRACE = True
 
 ###################################
@@ -21,6 +21,8 @@ IS_TRACE = True
 COMPOUND = "compound"
 NOUN = "NOUN"
 VERB = 'VERB'
+AUX = 'AUX'
+AUXPASS = 'auxpass'
 ROOT = 'ROOT'
 ADJECTIVE = "ADJ"
 UNIQUE_KEY = "unique"
@@ -28,6 +30,9 @@ MANY_KEY = "many"
 PRIMARY_KEY = " PK"
 MULTIVALUE_KEY = " *"
 RELATION = "RELATIONS"
+ADP = 'ADP'
+DEP = 'agent'
+BY_KEY = 'by'
 
 ###################################
 ###################################
