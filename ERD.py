@@ -25,6 +25,7 @@ from object import attribute as a
 from object import entity as e
 from object import relation as r
 
+
 ###################################
 ###################################
 ###                             ###
@@ -33,7 +34,10 @@ from object import relation as r
 ###################################
 ###################################
 isDebug = IS_DEBUG
-isTrace = IS_TRACE
+isConsoleTrace = IS_CONSOLE_TRACE
+isXmlOutput = IS_XML_OUTPUT_FILE
+isTxtOutput = IS_TXT_OUTPUT_FILE
+isDiagram = IS_DIAGRAM
 
 ###################################
 ###################################
@@ -56,7 +60,7 @@ def setup():
 ###################################
 def run(document):
     setup()
-    nlp = spacy.load("en_core_web_sm")
+    nlp = spacy.load(SPACY_ENGINE)
     doc = nlp(str(document))
     sentences = list(doc.sents)
 
@@ -69,7 +73,19 @@ def run(document):
         fsm(instance)
         sentenceList.append(instance)
 
-    if isTrace:
+    if isTxtOutput:
+        txtDiagramGenerator()
+
+    if isDiagram:
+        if isDebug:
+            logging.debug("Drawing right now => " + str(datetime.now()))
+        from diagrammer.diagram import createDiagramContent
+        createDiagramContent(ENTITY_LIST)
+
+    if isXmlOutput:
+        xmlGenerator()
+
+    if isConsoleTrace:
         if isDebug:
             logging.debug("Drawing right now => " + str(datetime.now()))
         maker()
@@ -92,6 +108,67 @@ RELATION_LIST = []
 ###                             ###
 ###################################
 ###################################
+def xmlGenerator():
+    xmlStringToExport = "<?xml version=\"1.0\" ?>\n"
+    entityRowStart = "<entity name=\"{}\">\n"
+    attributeRow = "\t<attribute name=\"{}\" primary_key=\"{}\" multi_valued=\"{}\"/>\n"
+    entityRowEnd = "</entity>\n"
+
+    for entity in ENTITY_LIST:
+        xmlStringToExport += entityRowStart.format(entity.getName())
+        for attribute in entity.getAttributes():
+            xmlStringToExport += attributeRow.format(attribute.getName(), attribute.isPrimaryKey(),
+                                                     attribute.isMultiValued())
+        xmlStringToExport += entityRowEnd
+
+    if len(RELATION_LIST) > 0:
+        relationRowStart = "<relation>\n"
+        relationRowEntityOne = "\t<entity name=\"{}\" role=\"{}\" multiplicity=\"{}\"/>\n"
+        relationRowActionStatement = "\t<action name=\"{}\"/>\n"
+        relationRowEntityTwo = "\t<entity name=\"{}\" role=\"{}\" multiplicity=\"{}\"/>\n"
+        relationRowEnd = "</relation>\n"
+        for relation in RELATION_LIST:
+            xmlStringToExport += relationRowStart
+            xmlStringToExport += relationRowEntityOne.format(relation.who, "from", relation.getMultiplicityOne())
+            xmlStringToExport += relationRowActionStatement.format(relation.action)
+            xmlStringToExport += relationRowEntityTwo.format(relation.whom, "to", relation.getMultiplicityTwo())
+            xmlStringToExport += relationRowEnd
+
+    if isDebug:
+        logging.debug(xmlStringToExport)
+
+    with open(XML_OUTPUT_FILE, "w") as file:
+        file.write(xmlStringToExport)
+
+def txtDiagramGenerator():
+    diagramToExport = ""
+    for entity in ENTITY_LIST:
+        diagramToExport += line_border() + "\n"
+        diagramToExport += table_line(entity.getName()) + "\n"
+        diagramToExport += line_border() + "\n"
+        for attribute in entity.getAttributes():
+            attribute_line = attribute.getName()
+            if eval(attribute.isMultiValued()):
+                attribute_line = str(attribute_line).__add__(MULTIVALUE_KEY)
+            if eval(attribute.isPrimaryKey()):
+                attribute_line = str(attribute_line).__add__(PRIMARY_KEY)
+            diagramToExport += item_line(attribute_line) + "\n"
+        diagramToExport += line_border() + "\n"
+
+    if len(RELATION_LIST) > 0:
+        diagramToExport += line_border() + "\n"
+        diagramToExport += table_line(RELATION) + "\n"
+        diagramToExport += line_border() + "\n"
+        for relation in RELATION_LIST:
+            diagramToExport += relation_line(" (" + relation.getMultiplicityOne() + ") " + relation.who + " --> " + relation.action + " -> (" + relation.getMultiplicityTwo() + ") " + relation.whom) + "\n"
+            diagramToExport += line_border()
+
+    with open(TXT_OUTPUT_FILE, "w") as file:
+        file.write(diagramToExport)
+
+    if isDebug:
+        logging.debug("Diagram is created at txt file.")
+
 def getEntity(subject):
     for item in ENTITY_LIST:
         if str(item.getName()).lower() == str(subject).lower():
@@ -151,7 +228,10 @@ def analyzer(sentence):
     verb = None
     object = None
 
-    # start : asagisi silinebilir!
+    # NOTE: PassiveVoiceDetection feature starts
+    if isDebug:
+        logging.debug("\t Starting to check each word in the sentence to understand whether this is sentence is passive or not...")
+
     hasAux = False
     hasVerb = False
     isPassive = False
@@ -166,9 +246,62 @@ def analyzer(sentence):
     if hasAux and hasVerb:
         isPassive = True
         if isDebug:
-            logging.debug("\t This sentence has a passive structure!")
-    # end
+            logging.debug("\t This sentence has a passive structure! Starting to divide...")
+            logging.debug("\t PassiveVoiceDetection feature is going to continue to work since this is passive voice.")
 
+        pobjStr = ''
+        verbStr = ''
+        nsubjpassStr = ''
+        punctStr = ''
+        for token in sentence:
+            if token.pos_ == NOUN and token.dep_ == POBJ:
+                pobjStr = token.text
+
+            if token.pos_ == VERB and token.dep_ == ROOT:
+                verbStr = token.text
+
+            if token.pos_ == NOUN and token.dep_ == NSUBJPASS:
+                nsubjpassStr = token.text
+
+            if token.pos_ == PUNCT and token.dep_ == PUNCT_DEP:
+                punctStr = token.text
+
+        if isDebug:
+            logging.debug("\t\t Division is completed. Captured items are: ")
+            logging.debug("\t\t\t pobj: " + pobjStr)
+            logging.debug("\t\t\t verb: " + verbStr)
+            logging.debug("\t\t\t nsubjpass: " + nsubjpassStr)
+            logging.debug("\t\t\t punct: " + punctStr)
+    else:
+        isPassive = False
+        if isDebug:
+            logging.debug("\t This sentence does not have a passive structure, it's active voice.")
+            logging.debug("\t PassiveVoiceDetection feature stopped to work.")
+
+    if isPassive:
+        if isDebug:
+            logging.debug("\t Since this sentence is passive voice, we have to do replacement.")
+        replacementStr = ""
+
+        try:
+            if isDebug:
+                logging.debug("\t New sentence is being created... Expectation is fully sentence in pobj + verb + nsubjpass + punct form.")
+            # NOTE: Subject'in singular / plural olmasina gore verb formu duzenlenebilir
+            # NOTE: Determiner'lar eklenebilir
+            replacementStr = pobjStr + " " + verbStr + " " + nsubjpassStr + punctStr
+        except:
+            if isDebug:
+                logging.debug("\t Something is gone wrong. You have to check pobjStr, verbStr, nsubjpassStr and punctStr variables.")
+
+        if replacementStr != "":
+            if isDebug:
+                logging.debug("\t Now new string is being converted into spacy data structure...")
+            nlp = spacy.load(SPACY_ENGINE)
+            sentence = nlp(str(replacementStr))
+    # NOTE: PassiveVoiceDetection feature ends
+
+    if isDebug:
+        logging.debug("\t ActiveVoiceDetection feature starts to work...")
     # retrieve subject part from the sentence
     for token in sentence:
         if isDebug:

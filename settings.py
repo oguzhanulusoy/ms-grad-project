@@ -5,11 +5,28 @@
 ###                             ###
 ###################################
 ###################################
+# Constants
+SPACY_ENGINE = 'en_core_web_sm'
 SPECIAL_VERB_LIST = ["has", "contains", "includes"]
 SUBJECT_DEPS_LIST = ["nsubj", "nsubjpass"]
 TABLE_SIZE = 60
-IS_DEBUG = True
-IS_TRACE = True
+
+# Flags
+IS_DEBUG = False
+IS_CONSOLE_TRACE = False
+IS_DIAGRAM = True
+IS_XML_OUTPUT_FILE = False
+IS_TXT_OUTPUT_FILE = False
+
+# .xml file
+XML_OUTPUT_FILENAME = "xml-output"
+XML_OUTPUT_FILE_EXTENSION = ".xml"
+XML_OUTPUT_FILE = XML_OUTPUT_FILENAME + XML_OUTPUT_FILE_EXTENSION
+
+# .txt file
+TXT_OUTPUT_FILENAME = "txt-output"
+TXT_OUTPUT_FILE_EXTENSION = ".txt"
+TXT_OUTPUT_FILE = TXT_OUTPUT_FILENAME + TXT_OUTPUT_FILE_EXTENSION
 
 ###################################
 ###################################
@@ -22,7 +39,11 @@ COMPOUND = "compound"
 NOUN = "NOUN"
 VERB = 'VERB'
 AUX = 'AUX'
+POBJ = 'pobj'
+NSUBJPASS = 'nsubjpass'
 AUXPASS = 'auxpass'
+PUNCT = 'PUNCT'
+PUNCT_DEP = 'punct'
 ROOT = 'ROOT'
 ADJECTIVE = "ADJ"
 UNIQUE_KEY = "unique"
