@@ -11,6 +11,8 @@
 def createERDiagram(entities, relations, document):
     import graphviz
     file = nameUtil() + ".gv"
+    # To convert .gv file to png
+    # Please use this tool: https://convertio.co/tr/gv-png/
     e = graphviz.Graph('ER', filename=file, engine='neato', directory='diagrammer/output/')
 
     # For each entity in entity list, create a box shape
@@ -74,7 +76,7 @@ def createERDiagram(entities, relations, document):
     return file
 
 isPrint = True
-isDebug = False
+isDebug = True
 TABLE_STARTING_WITH = "["
 ATTRIBUTE_STARTING_WITH = "+"
 ATTRIBUTE_ENDING_WITH = ";"

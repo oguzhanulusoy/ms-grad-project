@@ -12,6 +12,7 @@ import spacy
 import logging
 #python -m spacy download en_core_web_sm
 #pip freeze > requirements.txt
+#https://convertio.co/tr/gv-png/
 
 ###################################
 ###################################
