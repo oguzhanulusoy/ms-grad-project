@@ -12,9 +12,10 @@ SUBJECT_DEPS_LIST = ["nsubj", "nsubjpass"]
 TABLE_SIZE = 60
 
 # Flags
+IS_ER_DIAGRAM = True
 IS_DEBUG = False
 IS_CONSOLE_TRACE = False
-IS_DIAGRAM = True
+IS_CLASS_DIAGRAM = False
 IS_XML_OUTPUT_FILE = False
 IS_TXT_OUTPUT_FILE = False
 

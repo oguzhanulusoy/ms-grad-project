@@ -37,7 +37,8 @@ isDebug = IS_DEBUG
 isConsoleTrace = IS_CONSOLE_TRACE
 isXmlOutput = IS_XML_OUTPUT_FILE
 isTxtOutput = IS_TXT_OUTPUT_FILE
-isDiagram = IS_DIAGRAM
+isClassDiagram = IS_CLASS_DIAGRAM
+isERDiagram = IS_ER_DIAGRAM
 
 ###################################
 ###################################
@@ -76,11 +77,18 @@ def run(document):
     if isTxtOutput:
         txtDiagramGenerator()
 
-    if isDiagram:
+    if isClassDiagram:
         if isDebug:
             logging.debug("Drawing right now => " + str(datetime.now()))
-        from diagrammer.diagram import createDiagramContent
-        createDiagramContent(ENTITY_LIST)
+        from diagrammer.diagram import createClassDiagramContent
+        createClassDiagramContent(ENTITY_LIST)
+
+    if isERDiagram:
+        from diagrammer.diagram import createERDiagram
+        erd = createERDiagram(entities=ENTITY_LIST, relations=RELATION_LIST, document=document)
+        if isDebug:
+            logging.debug("Drawing right now => " + str(datetime.now()))
+            logging.debug("Entity-Relationship diagram has been created successfully. It is named {}.".format(erd))
 
     if isXmlOutput:
         xmlGenerator()
@@ -170,6 +178,7 @@ def txtDiagramGenerator():
         logging.debug("Diagram is created at txt file.")
 
 def getEntity(subject):
+    entity = None
     for item in ENTITY_LIST:
         if str(item.getName()).lower() == str(subject).lower():
             entity = item
@@ -289,10 +298,10 @@ def analyzer(sentence):
             # NOTE: Subject'in singular / plural olmasina gore verb formu duzenlenebilir
             # NOTE: Determiner'lar eklenebilir
             replacementStr = pobjStr + " " + verbStr + " " + nsubjpassStr + punctStr
-        except:
+        except Exception as exception:
             if isDebug:
                 logging.debug("\t Something is gone wrong. You have to check pobjStr, verbStr, nsubjpassStr and punctStr variables.")
-
+                logging.debug("\t {}".format(str(exception)))
         if replacementStr != "":
             if isDebug:
                 logging.debug("\t Now new string is being converted into spacy data structure...")
@@ -338,9 +347,10 @@ def analyzer(sentence):
                 # to find multiplicity through many adjective
                 if str(sentence.__getitem__(i).text).lower() == MANY_KEY:
                     isMultiplicity = True
-        except:
+        except Exception as exception:
             if isDebug:
                 logging.error("Analyzer has got and error while parsing multiplicity or primary key")
+                logging.debug("{}".format(str(exception)))
 
         try:
             # add one word noun
@@ -348,27 +358,30 @@ def analyzer(sentence):
                 if sentence.__getitem__(i).pos_ == NOUN:
                     if sentence.__getitem__(i).text not in subject:
                         noun = str(sentence.__getitem__(i).text)
-        except:
+        except Exception as exception:
             if isDebug:
                 logging.error("Analyzer has got an error while parsing the one word noun => " + str(sentence.__getitem__(i).text))
+                logging.debug("{}".format(str(exception)))
 
         try:
             # add two words noun
             if str(sentence.__getitem__(i).text) not in previousWord and str(sentence.__getitem__(i).dep_) == COMPOUND and str(sentence.__getitem__(i+1).dep_) != COMPOUND:
                 previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text
                 noun = previousWord
-        except:
+        except Exception as exception:
             if isDebug:
                 logging.error("Analyzer has got an error while parsing the two words noun => " + str(sentence.__getitem__(i).text + " " + sentence.__getitem__(i).head.text))
+                logging.debug("{}".format(str(exception)))
 
         try:
             # add three words noun
             if str(sentence.__getitem__(i).dep_) == COMPOUND and str(sentence.__getitem__(i+1).dep_) == COMPOUND:
                 previousWord = sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text
                 noun = previousWord
-        except:
+        except Exception as exception:
             if isDebug:
                 logging.error("Analyzer has got an error while parsing the three words noun => " + str(sentence.__getitem__(i).text + " " + sentence.__getitem__(i+1).text + " " + sentence.__getitem__(i).head.text))
+                logging.debug("{}".format(str(exception)))
 
         if not noun.__eq__(''):
             nouns.append(noun)
@@ -428,9 +441,10 @@ def fsm(sentence):
                 logging.debug("\t\t The entity already exists => " + str(subject))
             try:
                 modifyEntity(sentence=sentence, isSinglePerson=isSinglePerson)
-            except:
+            except Exception as exception:
                 if isDebug:
                     logging.error("\t\t An error for modifyEntity => " + str(subject))
+                    logging.debug("\t\t {}".format(str(exception)))
             if isDebug:
                 logging.debug("\t\t Finally modified entity => " + str(subject))
 
@@ -440,9 +454,10 @@ def fsm(sentence):
                 logging.debug("\t\t The entity is not found => " + str(subject))
             try:
                 createEntity(sentence=sentence, isSinglePerson=isSinglePerson)
-            except:
+            except Exception as exception:
                 if isDebug:
                     logging.error("\t\t An error for createEntity => " + str(subject))
+                    logging.debug("\t\t {}".format(str(exception)))
             if isDebug:
                 logging.debug("\t\t Finally created entity => " + str(subject))
 
@@ -452,9 +467,10 @@ def fsm(sentence):
             logging.debug("\t\t A special verb is NOT found => " + str(verb))
         try:
             createRelation(sentence=sentence)
-        except:
+        except Exception as exception:
             if isDebug:
                 logging.error("\t\t An error for createRelation => " + str(verb))
+                logging.debug("\t\t {}".format(str(exception)))
         if isDebug:
             logging.debug("\t\t Finally created relation => " + str(verb))
 

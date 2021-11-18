@@ -30,3 +30,8 @@ typer==0.3.2
 urllib3==1.26.4
 wasabi==0.8.2
 Werkzeug==1.0.1
+
+graphviz~=0.16
+matplotlib~=3.4.1
+scikit-learn~=0.24.1
+pandas~=1.2.4
