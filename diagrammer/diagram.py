@@ -15,6 +15,9 @@ def createERDiagram(entities, relations, document):
     # Please use this tool: https://convertio.co/tr/gv-png/
     e = graphviz.Graph('ER', filename=file, engine='neato', directory='diagrammer/output/')
 
+    # Store all entity with _tbl postfix in another list
+    tempEntities = []
+
     # For each entity in entity list, create a box shape
     # Place the entity inside of the shape
     # Retrieve all attributes of current entity
@@ -24,17 +27,24 @@ def createERDiagram(entities, relations, document):
     # If it is primary key, add a star
     for entity in entities:
         e.attr('node', shape='box')
-        e.node(entity.getName())
+        # Store entity reference in back-end, display entity label in front-end
+        entityLabel = str(entity.getName()).capitalize()
+        entityReference = str(entity.getName()).lower().__add__("_tbl")
+        e.node(entityReference, label=entityLabel)
+        tempEntities.append(entityReference)
         for attribute in entity.getAttributes():
-            attribute_line = attribute.getName()
+            # Stores attribute reference in back-end, displays attribute label in front-end
+            attributeLabel = str(attribute.getName()).capitalize()
+            attributeReference = str(entity.getName()).lower().__add__("_").__add__(str(attribute.getName()))
             if eval(attribute.isMultiValued()):
                 e.attr('node', shape='doublecircle')
             else:
                 e.attr('node', shape='ellipse')
             if eval(attribute.isPrimaryKey()):
-                attribute_line = str(attribute_line).__add__(" pk")
-            e.node(attribute_line)
-            e.edge(entity.getName(), attribute_line)
+                attributeLabel = str(attributeLabel).__add__(" pk")
+            e.node(attributeReference, label=attributeLabel)
+            # Make a connection between entity reference and attribute reference
+            e.edge(entityReference, attributeReference)
 
     # If there is any relation, edges should be determined
     # For each relation in relationship list, do these:
@@ -44,10 +54,25 @@ def createERDiagram(entities, relations, document):
     # Add multiplicities (who, whom)
     if len(relations) > 0:
         for relation in relations:
+            fromReference = str(relation.who).lower() + "_tbl"
+            toReference = str(relation.whom).lower() + "_tbl"
+            if not fromReference in tempEntities:
+                e.attr('node', shape='box')
+                # Store entity reference in back-end, display entity label in front-end
+                entityLabel = str(relation.who).capitalize()
+                entityReference = fromReference
+                e.node(entityReference, label=entityLabel)
+            if not toReference in tempEntities:
+                e.attr('node', shape='box')
+                # Store entity reference in back-end, display entity label in front-end
+                entityLabel = str(relation.whom).capitalize()
+                entityReference = toReference
+                e.node(entityReference, label=entityLabel)
+            # Make relationship connection between two entities
             e.attr('node', shape='diamond', style='filled', color='lightgrey')
             e.node(relation.action)
-            e.edge(relation.who, relation.action, label=relation.getMultiplicityOne(), len='1.00')
-            e.edge(relation.action, relation.whom, label=relation.getMultiplicityTwo(), len='1.00')
+            e.edge(fromReference, relation.action, label=relation.getMultiplicityOne(), len='1.00')
+            e.edge(relation.action, toReference, label=relation.getMultiplicityTwo(), len='1.00')
 
     # We may not want to see full text in the figure
     # It can be controlled with a flag

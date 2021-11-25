@@ -7,7 +7,7 @@
 ###################################
 # Constants
 SPACY_ENGINE = 'en_core_web_sm'
-SPECIAL_VERB_LIST = ["has", "contains", "includes"]
+SPECIAL_VERB_LIST = ["has", "have", "includes"]
 SUBJECT_DEPS_LIST = ["nsubj", "nsubjpass"]
 TABLE_SIZE = 60
 
